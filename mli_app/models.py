@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, AbstractUser
 
 
 class CustomUserManager(BaseUserManager):
@@ -34,7 +34,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 
-class Group(models.Model):
+class PatientGroup(models.Model):
     name = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -42,27 +42,20 @@ class Group(models.Model):
         return self.name
 
 
-class Admin(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.user.name
-
-
-class Patient(models.Model):
-    name = models.CharField(max_length=255)
-    groups = models.ManyToManyField(Group)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='children', blank=True, null=True)
-    age = models.IntegerField()
-    date_of_birth = models.DateField(null=True)
-    health_record = models.TextField(blank=True)
-    email = models.EmailField(blank=True)
-    phone_number = models.IntegerField(blank=True)
-    address = models.TextField()
+class Patient(CustomUser):
+    otp = models.CharField(max_length=6, null=True)
+    is_verified = models.BooleanField(default=False)
+    patients_group = models.ForeignKey(PatientGroup, on_delete=models.SET_NULL, null=True, blank=True)
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, related_name='children', blank=True, null=True)
+    age = models.IntegerField(blank=True, null=True)
+    date_of_birth = models.DateField(blank=True, null=True)
+    health_record = models.TextField(blank=True, null=True)
+    phone_number = models.IntegerField(blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
     insurance_id = models.CharField(max_length=30, default=None, blank=True, null=True)
 
     def __str__(self):
-        return self.email
+        return self.name
 
 
 class LoginCredential(models.Model):
