@@ -23,7 +23,9 @@ def find_sum2(lst: list):
         if (14 - ele) in lst[:i] or (14 - ele) in lst[i + 1:]:
             r = sorted([ele, 14 - ele])
             rs.append(r)
-    print(rs)
+            rs_set=set(tuple(x) for x in rs)
+            result = [list(x) for x in rs_set]
+            print(result)
 
 
 find_sum2(input_list)
