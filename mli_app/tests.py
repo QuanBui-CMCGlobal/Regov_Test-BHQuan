@@ -1,42 +1,113 @@
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APITestCase
-from .models import Patient, PatientGroup
-from .serializers import PatientSerializer
+from django.test import TestCase
+from .models import CustomUser, PatientGroup, Patient
 
-
-class PatientTestCase(APITestCase):
+class CustomUserModelTest(TestCase):
     def setUp(self):
-        self.group1 = PatientGroup.objects.create(name='PatientGroup 1')
-        self.group2 = PatientGroup.objects.create(name='PatientGroup 2')
-        self.patient1 = Patient.objects.create(name='John Doe', age=30, address='123 HCM City')
-        self.patient2 = Patient.objects.create(name='Jane Doe', age=25, address='456 Hanoi', parent=self.patient1)
+        self.user = CustomUser.objects.create(
+            email='test@example.com',
+            name='Test User',
+            is_active=True,
+            is_staff=False,
+        )
 
-    def test_create_patient(self):
-        url = reverse('patient-list')
-        data = {
-            'name': 'Ryan Med',
-            'age': 40,
-            'address': '789 Hue',
-            'groups': [{'name': 'PatientGroup 1'}, {'name': 'PatientGroup 2'}]
-        }
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Patient.objects.count(), 3)
-        self.assertEqual(Patient.objects.last().name, 'Ryan Med')
-        self.assertEqual(Patient.objects.last().groups.count(), 2)
+    def test_email_label(self):
+        field_label = self.user._meta.get_field('email').verbose_name
+        self.assertEqual(field_label, 'email')
 
-    def test_add_patient_to_group(self):
-        url = reverse('add-patient-to-group', kwargs={'pk': self.patient1.id})
-        data = {'group_name': 'PatientGroup 2'}
-        response = self.client.put(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(self.patient1.groups.count(), 2)
-        self.assertEqual(self.patient1.groups.last().name, 'PatientGroup 2')
+    def test_name_label(self):
+        field_label = self.user._meta.get_field('name').verbose_name
+        self.assertEqual(field_label, 'name')
 
-    def test_search_patient(self):
-        url = reverse('search-patient') + '?q=Jane'
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        serializer = PatientSerializer(instance=self.patient2)
-        self.assertIn(serializer.data, response.data)
+    def test_object_name_is_email(self):
+        expected_object_name = self.user.email
+        self.assertEqual(expected_object_name, str(self.user))
+
+
+class PatientGroupModelTest(TestCase):
+    def setUp(self):
+        self.group = PatientGroup.objects.create(
+            name='Test Group',
+        )
+
+    def test_name_label(self):
+        field_label = self.group._meta.get_field('name').verbose_name
+        self.assertEqual(field_label, 'name')
+
+    def test_object_name_is_name(self):
+        expected_object_name = self.group.name
+        self.assertEqual(expected_object_name, str(self.group))
+
+
+class PatientModelTest(TestCase):
+    def setUp(self):
+        self.group = PatientGroup.objects.create(
+            name='Test Group',
+        )
+        self.parent = Patient.objects.create(
+            email='parent@example.com',
+            name='Parent User',
+            is_active=True,
+            is_staff=False,
+            patients_group=self.group,
+            age=30,
+            date_of_birth='1992-01-01',
+            phone_number=1234567890,
+            address='123 Main St',
+            insurance_id='ABCD1234',
+        )
+        self.child = Patient.objects.create(
+            email='child@example.com',
+            name='Child User',
+            is_active=True,
+            is_staff=False,
+            patients_group=self.group,
+            parent=self.parent,
+            age=5,
+            date_of_birth='2018-01-01',
+            phone_number=1234567890,
+            address='456 Main St',
+            insurance_id='EFGH5678',
+        )
+
+    def test_email_label(self):
+        field_label = self.child._meta.get_field('email').verbose_name
+        self.assertEqual(field_label, 'email')
+
+    def test_name_label(self):
+        field_label = self.child._meta.get_field('name').verbose_name
+        self.assertEqual(field_label, 'name')
+
+    def test_object_name_is_email(self):
+        expected_object_name = self.child.email
+        self.assertEqual(expected_object_name, str(self.child))
+
+    def test_age_blank(self):
+        field_blank = self.child._meta.get_field('age').blank
+        self.assertTrue(field_blank)
+
+    def test_date_of_birth_blank(self):
+        field_blank = self.child._meta.get_field('date_of_birth').blank
+        self.assertTrue(field_blank)
+
+    def test_health_record_blank(self):
+        field_blank = self.child._meta.get_field('health_record').blank
+        self.assertTrue(field_blank)
+
+    def test_phone_number_blank(self):
+        field_blank = self.child._meta.get_field('phone_number').blank
+        self.assertTrue(field_blank)
+
+    def test_address_blank(self):
+        field_blank = self.child._meta.get_field('address').blank
+        self.assertTrue(field_blank)
+
+    def test_insurance_id_blank(self):
+        field_blank = self.child._meta.get_field('insurance_id').blank
+        self.assertTrue(field_blank)
+
+    def test_parent_relationship(self):
+        parent = self.child.parent
+        self.assertEqual(parent, self.parent)
+
+    def test_group_relationship(self):
+        group = self.child.patients

@@ -1,4 +1,9 @@
-# Revgov_Test
+# Description
+
+API for Medical Laboratory Inventory Management System (MLI)
+
+# Architechture
+
 
 # API
 GET /groups: List all groups

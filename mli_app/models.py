@@ -56,11 +56,3 @@ class Patient(CustomUser):
 
     def __str__(self):
         return self.name
-
-
-class LoginCredential(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    last_login = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.user.email
